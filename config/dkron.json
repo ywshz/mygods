@@ -1,0 +1,12 @@
+{
+  "tags": {
+    "role": "web",
+    "datacenter": "east"
+  },
+  "keyspace": "swiss",
+  "encrypt": "kPpdjphiipNSsjd4QHWbkA==",
+  "http-addr": 8088,
+  "backend": "etcd",
+  "backend_machine": "127.0.0.1:2379",
+  "log_level":"debug"
+}
