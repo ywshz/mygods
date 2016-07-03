@@ -2,7 +2,7 @@ package swiss
 
 import (
 	"github.com/samuel/go-zookeeper/zk"
-"strconv"
+	"strconv"
 )
 
 type Storage struct {
@@ -10,11 +10,12 @@ type Storage struct {
 	connEvent  <- chan zk.Event
 	execIdLock *zk.Lock
 	jobIdLock  *zk.Lock
+	server     *Server
 }
 
 var WorldACLPermAll = zk.WorldACL(zk.PermAll)
 
-func NewStore() *Storage {
+func NewStore(s *Server) *Storage {
 	conn, connEvent, err := zk.Connect([]string{"127.0.0.1"}, defaultLeaderTime)
 
 	if err != nil {
@@ -26,7 +27,16 @@ func NewStore() *Storage {
 
 	execIdLock := zk.NewLock(conn, "/swiss/ids/execid", WorldACLPermAll)
 	jobIdLock := zk.NewLock(conn, "/swiss/ids/jobid", WorldACLPermAll)
-	return &Storage{conn:conn, connEvent:connEvent, execIdLock:execIdLock, jobIdLock:jobIdLock}
+	store := &Storage{conn:conn, connEvent:connEvent, execIdLock:execIdLock, jobIdLock:jobIdLock, server:s}
+	store.initBasePath()
+	return store
+}
+
+func (s *Storage) initBasePath() {
+	if exist, _, _ := s.conn.Exists("/swiss/readytorun"); !exist {
+		log.Info("/swiss/readytorun not exist, 创建中")
+		log.Info(s.conn.Create("/swiss/readytorun", []byte(""), 0, WorldACLPermAll))
+	}
 }
 
 func (s *Storage) LeaderKey() string {
@@ -65,4 +75,34 @@ func (s *Storage) NextJobId() (int, error) {
 	newStr := strconv.Itoa(newInt)
 	s.conn.Set("/swiss/ids/jobid", []byte(newStr), -1)
 	return newInt, nil
+}
+
+func (s *Storage) ListJobs() []*Job {
+	//s.Client.List(s.keyspace + "/jobs")
+	jobs := make([]*Job, 1)
+	jobs[0] = &Job{
+		Id:1,
+		Name:"test",
+		ScheduleType: 0,
+		Cron : "*/2 * * * * *",
+		ScriptType: 0,
+		Server: s.server,
+	}
+	return jobs
+}
+
+func (s *Storage) Create(path string, data []byte) (string, error) {
+	log.Debug("Create key,value:", path, "data", data)
+	return s.conn.Create(path, data, 0, WorldACLPermAll)
+}
+
+func (s *Storage) Set(path string, data []byte) error {
+	log.Debug("Set key,value:", path, "data", data)
+	_, err := s.conn.Set(path, []byte(data), -1)
+	return err
+}
+
+func (s *Storage) Get(path string) (string, error) {
+	data, _, err := s.conn.Get(path)
+	return string(data), err
 }

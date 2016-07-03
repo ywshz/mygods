@@ -7,6 +7,6 @@ import (
 func main() {
 
 	server := &swiss.Server{}
-	server.Run(nil)
+	server.Run(nil )
 
 }

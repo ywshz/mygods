@@ -83,7 +83,7 @@ func (s *ServerCommand) runForElection() {
 		select {
 		case isElected := <-electedCh:
 			if isElected {
-				log.Info("server: Cluster leadership acquired")
+				log.Info("1server: Cluster leadership acquired")
 				// If this server is elected as the leader, start the scheduler
 				s.schedule()
 			} else {

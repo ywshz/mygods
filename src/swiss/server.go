@@ -9,24 +9,27 @@ import (
 
 const (
 	gracefulTimeout = 3 * time.Second
-	defaultRecoverTime = 10 * time.Second
-	defaultLeaderTime = 10 * time.Second
+	defaultRecoverTime = 3 * time.Second
+	defaultLeaderTime = 3 * time.Second
 )
 
 type Server struct {
 	Store      *Storage
 	ShutdownCh <-chan struct{}
 	candidate  *Candidate //用于选举leader
+	scheduler  *Scheduler
 }
 
 func (s *Server) Run(args []string) int {
 	log.Info("连接zk Store...")
-	s.Store = NewStore()
+	s.Store = NewStore(s)
 	log.Info("连接zk Store...成功")
 
 	log.Info("创建候选人...")
 	s.candidate = NewCandidate(s.Store, s.Store.LeaderKey())
 	log.Info("创建候选人...成功")
+
+	s.scheduler = NewScheduler()
 
 	go func() {
 		for {
@@ -48,19 +51,36 @@ func (s *Server) runForElection() {
 		select {
 		case isElected := <-electedCh:
 			if isElected {
-				log.Info("server: Cluster leadership acquired")
-				// If this server is elected as the leader, start the scheduler
-				//s.schedule()
+				log.Info("Server: Cluster leadership acquired")
+				//// If this server is elected as the leader, start the scheduler
+				//log.Info("????????????")
+				s.schedule()
 			} else {
 				log.Info("server: Cluster leadership lost")
 				// Stop the schedule of this server
-				//s.stopSchedule()
+				s.stopSchedule()
 			}
 		case err := <-errCh:
 			log.WithError(err).Debug("Leader election failed, channel is probably closed")
 			return
 		}
 	}
+}
+
+func (s *Server) schedule() {
+	log.Info("onElected")
+	if s.scheduler.Started {
+		log.Info("Scheduler is started -> restart")
+		s.scheduler.Restart(s.Store.ListJobs())
+	} else {
+		log.Info("start scheduler")
+		s.scheduler.Start(s.Store.ListJobs())
+	}
+}
+
+func (s *Server) stopSchedule() {
+	log.Info("onLoseLeader")
+	s.scheduler.Stop()
 }
 
 // handleSignals blocks until we get an exit-causing signal
