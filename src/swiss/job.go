@@ -37,11 +37,11 @@ type ReadyToRunJob struct {
 }
 
 func (job *Job) Run() {
-	//取executionId
-	executionId, _ := job.Server.Store.NextExecutionId()
-	log.Info("Get job exec id -> ",executionId)
 	//如果是Leader, 往readytorun里塞记录
 	if job.Server.candidate.IsLeader() {
+		//取executionId
+		executionId, _ := job.Server.Store.NextExecutionId()
+		log.Info("Get job exec id -> ", executionId)
 		exeJobInfo, _ := json.Marshal(ReadyToRunJob{
 			JobId: job.Id,
 			ExeId: executionId,
@@ -49,10 +49,10 @@ func (job *Job) Run() {
 			Ip: job.WorkerIp,
 		})
 
-		path,error := job.Server.Store.Create("/swiss/readytorun/" + strconv.Itoa(executionId), exeJobInfo)
+		path, error := job.Server.Store.Create("/swiss/readytorun/" + strconv.Itoa(executionId), exeJobInfo)
 		if error != nil {
 			log.Error(error)
-		}else{
+		}else {
 			log.Info("Job save to ", path)
 		}
 	}
