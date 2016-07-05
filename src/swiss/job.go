@@ -4,7 +4,8 @@ import (
 	"time"
 	"fmt"
 	"encoding/json"
-	"strconv"
+	"net/http"
+	"net/url"
 )
 
 type Job struct {
@@ -49,12 +50,14 @@ func (job *Job) Run() {
 			Ip: job.WorkerIp,
 		})
 
-		path, error := job.Server.Store.Create("/swiss/readytorun/" + strconv.Itoa(executionId), exeJobInfo)
-		if error != nil {
-			log.Error(error)
-		}else {
-			log.Info("Job save to ", path)
+		resp, err := http.PostForm("http://localhost:8080/jobreceiver",
+			url.Values{"job": {string(exeJobInfo)}})
+		defer resp.Body.Close()
+
+		if err!=nil {
+			fmt.Printf("error:",err)
 		}
+
 	}
 }
 

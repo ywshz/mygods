@@ -3,7 +3,6 @@ package swiss
 import (
 	"net/http"
 	"fmt"
-	"html"
 	"github.com/samuel/go-zookeeper/zk"
 	"time"
 )
@@ -14,7 +13,7 @@ type Worker struct {
 }
 
 func NewWorker() *Worker {
-	conn, _, err := zk.Connect([]string{"127.0.0.1"}, 10*time.Second)
+	conn, _, err := zk.Connect([]string{"127.0.0.1"}, 10 * time.Second)
 	if err != nil {
 		panic(err)
 		log.Error("Zk连接创建失败...", err)
@@ -35,7 +34,7 @@ func (w *Worker) Start() {
 func (w *Worker) startHttpServer() {
 	log.Info("Set up http server for receive job request on port:", "8080")
 	http.HandleFunc("/jobreceiver", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
+		fmt.Println(r.PostFormValue("job"))
 	})
 
 	go http.ListenAndServe(":8080", nil)
