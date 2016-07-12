@@ -3,6 +3,7 @@ package swiss
 import (
 	"github.com/samuel/go-zookeeper/zk"
 	"strconv"
+	"encoding/json"
 )
 
 type Storage struct {
@@ -36,6 +37,10 @@ func (s *Storage) initBasePath() {
 	if exist, _, _ := s.conn.Exists("/swiss/readytorun"); !exist {
 		log.Info("/swiss/readytorun not exist, 创建中")
 		log.Info(s.conn.Create("/swiss/readytorun", []byte(""), 0, WorldACLPermAll))
+	}
+	if exist, _, _ := s.conn.Exists("/swiss/runningjobs"); !exist {
+		log.Info("/swiss/runningjobs not exist, 创建中")
+		log.Info(s.conn.Create("/swiss/runningjobs", []byte(""), 0, WorldACLPermAll))
 	}
 }
 
@@ -87,6 +92,7 @@ func (s *Storage) ListJobs() []*Job {
 		Cron : "*/2 * * * * *",
 		ScriptType: 0,
 		Server: s.server,
+		WorkerIp:[]string{"127.0.0.1"},
 	}
 	return jobs
 }
@@ -105,4 +111,39 @@ func (s *Storage) Set(path string, data []byte) error {
 func (s *Storage) Get(path string) (string, error) {
 	data, _, err := s.conn.Get(path)
 	return string(data), err
+}
+
+func (s *Storage) GetWorkers(ipFilter []string) ([]WorkerConnectionInfo, error) {
+	children, _, err := s.conn.Children("/swiss/workers")
+
+	childrenNum := len(children)
+	if childrenNum == 0 || err != nil {
+		return make([]WorkerConnectionInfo, 0), err
+	}
+
+	if ipFilter == nil {
+		result := make([]WorkerConnectionInfo, childrenNum)
+		for index, child := range children {
+			data, _ := s.Get("/swiss/workers/" + child)
+			var w WorkerConnectionInfo
+			json.Unmarshal([]byte(data), &w)
+			result[index] = w
+		}
+		return result, nil;
+	}
+
+	result := []WorkerConnectionInfo{}
+	for _, child := range children {
+		data, _ := s.Get("/swiss/workers/" + child)
+		var w WorkerConnectionInfo
+		json.Unmarshal([]byte(data), &w)
+
+		for _, ip := range ipFilter {
+			if ip == w.Ip {
+				result = append(result, w)
+				break;
+			}
+		}
+	}
+	return result, nil
 }

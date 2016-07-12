@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"math/rand"
 )
 
 type Job struct {
@@ -35,6 +36,7 @@ type ReadyToRunJob struct {
 	ExeId int `json:ExeId`
 	Tags  []string `json:tags`
 	Ip    []string `json:ip`
+	CreateTime time.Time `json:createTime`
 }
 
 func (job *Job) Run() {
@@ -48,14 +50,39 @@ func (job *Job) Run() {
 			ExeId: executionId,
 			Tags : job.WorkerTag,
 			Ip: job.WorkerIp,
+			CreateTime: time.Now(),
 		})
 
-		resp, err := http.PostForm("http://localhost:8080/jobreceiver",
-			url.Values{"job": {string(exeJobInfo)}})
-		defer resp.Body.Close()
+		//get worker
+		workers, err := job.Server.Store.GetWorkers(job.WorkerIp)
+		var successSendToWorker bool = false
 
-		if err!=nil {
-			fmt.Printf("error:",err)
+		if err != nil {
+			successSendToWorker = false
+			panic(err)
+		}
+
+		for i := len(workers); i > 0; i-- {
+			worker := workers[rand.Intn(len(workers))]
+
+			resp, err := http.PostForm(worker.ToUrl() + "/jobreceiver",
+				url.Values{"job": {string(exeJobInfo)}})
+
+			if err != nil {
+				fmt.Printf("error:", err)
+				continue
+			}
+			resp.Body.Close()
+
+			successSendToWorker = true
+			break;
+		}
+
+		if successSendToWorker {
+			job.Server.Store.Create("/swiss/runningjobs/", exeJobInfo)
+		} else {
+			//TODO: notify send failed error
+			log.Info("Job can not send to worker")
 		}
 
 	}
