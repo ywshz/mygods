@@ -9,6 +9,11 @@ import (
 	"math/rand"
 )
 
+const (
+	hive = "hive"
+	python = "python"
+	shell = "shell"
+)
 type Job struct {
 	Id           int `json:"id"`
 	Name         string `json:"name"`
@@ -17,7 +22,7 @@ type Job struct {
 	ScheduleType int `json:"scheduleType"`
 	Cron         string `json:"cron"`
 	Dependency   []int `json:"dependency"`
-	ScriptType   int `json:"scriptType"`
+	ScriptType   string `json:"scriptType"`
 	WorkerTag    []string `json:"workerTag"`
 	WorkerIp     []string `json:"workerIp"`
 	CreateTime   time.Time `json:"createTime"`
@@ -34,6 +39,7 @@ type Job struct {
 type ReadyToRunJob struct {
 	JobId int `json:jobId`
 	ExeId int `json:ExeId`
+	ScriptType string `json:scriptType`
 	Tags  []string `json:tags`
 	Ip    []string `json:ip`
 	CreateTime time.Time `json:createTime`
@@ -48,6 +54,7 @@ func (job *Job) Run() {
 		exeJobInfo, _ := json.Marshal(ReadyToRunJob{
 			JobId: job.Id,
 			ExeId: executionId,
+			ScriptType: job.ScriptType,
 			Tags : job.WorkerTag,
 			Ip: job.WorkerIp,
 			CreateTime: time.Now(),

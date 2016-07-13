@@ -79,6 +79,7 @@ func (w *Worker) runJob(job ReadyToRunJob) {
 
 	p := Processor{
 		Job : job,
+		zk : w.zk,
 	}
 
 	p.Run()
