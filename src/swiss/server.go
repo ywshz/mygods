@@ -61,7 +61,7 @@ func (s *Server) runForElection() {
 				s.stopSchedule()
 			}
 		case err := <-errCh:
-			log.WithError(err).Debug("Leader election failed, channel is probably closed")
+			log.Debug("Leader election failed, channel is probably closed. %s", err)
 			return
 		}
 	}

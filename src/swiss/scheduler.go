@@ -2,7 +2,6 @@ package swiss
 
 import (
 	"github.com/robfig/cron"
-	"github.com/Sirupsen/logrus"
 )
 
 type Scheduler struct {
@@ -16,9 +15,7 @@ func NewScheduler() *Scheduler {
 
 func (s *Scheduler) Start(jobs []*Job) {
 	for _, job := range jobs {
-		log.WithFields(logrus.Fields{
-			"job": job.Name,
-		}).Info("scheduler: Adding job to cron")
+		log.Info("scheduler: Adding job[%s] to cron",job.Name)
 
 		s.Cron.AddJob(job.Cron, job)
 	}

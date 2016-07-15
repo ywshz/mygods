@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"math/rand"
+	"strconv"
 )
 
 const (
@@ -86,10 +87,10 @@ func (job *Job) Run() {
 		}
 
 		if successSendToWorker {
-			job.Server.Store.Create("/swiss/runningjobs/", exeJobInfo)
+			job.Server.Store.Create("/swiss/runningjobs/" + strconv.Itoa(executionId), exeJobInfo)
 		} else {
 			//TODO: notify send failed error
-			log.Info("Job can not send to worker")
+			log.Error("Job can not send to worker")
 		}
 
 	}

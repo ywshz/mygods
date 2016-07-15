@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"github.com/armon/circbuf"
 	"strconv"
-	"github.com/Sirupsen/logrus"
 )
 
 type Processor struct {
@@ -17,29 +16,20 @@ type Processor struct {
 }
 
 func (p *Processor) Run() {
-	log.WithFields(logrus.Fields{
-		"Job": p.Job,
-	}).Debugln("Run job by worker")
+	log.Debugf("Run job[%s] by worker", p.Job)
 
 	//get job script
 	scriptBts, _, _ := p.zk.Get("/swiss/jobscript/" + strconv.Itoa(p.Job.JobId))
 	script := string(scriptBts)
-	log.WithFields(logrus.Fields{
-		"Script": script,
-	}).Debugln("Get the job script")
+	log.Debugf("Get the job script:%s", script)
 
 	fullFilePath := "/Users/yws/Documents/dev/works/" + strconv.Itoa(p.Job.ExeId)
-	log.WithFields(logrus.Fields{
-		"Path": fullFilePath,
-	}).Debugln("Job script full path")
+	log.Debugf("Job script full path:%s", fullFilePath)
 
 	//write to file
 	fout, err := os.Create(fullFilePath)
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"File": fullFilePath,
-			"Error": err,
-		}).Error("Job script full path")
+		log.Errorf("Job script full path,%s,%s",fullFilePath,err)
 		return
 	}
 	fout.Write(scriptBts)
@@ -51,7 +41,7 @@ func (p *Processor) Run() {
 
 	//设置超时提醒
 	slowTimer := time.AfterFunc(2 * time.Hour, func() {
-		log.Warnf("proc: Script '%s' slow, execution exceeding %v", script, 2 * time.Hour)
+		log.Warningf("proc: Script '%s' slow, execution exceeding %v", script, 2 * time.Hour)
 	})
 
 	//防止job的log太多,限制为256k, 当超过256k后,最早出现的日志将会逐步被代替
@@ -87,17 +77,14 @@ func (p *Processor) Run() {
 	//运行job
 	var success, done bool
 
-	log.WithFields(logrus.Fields{
-		"shell":shell,
-		"flag":flag,
-	}).Debug("Start the cmd")
+	log.Debugf("Start the cmd, Shell:%s, flag:%s", shell,flag)
 	cmd.Start()
 	go func() {
 		err = cmd.Wait()
 		slowTimer.Stop()
 
 		if err != nil {
-			log.WithError(err).Error("proc: command error output")
+			log.Errorf("proc: command error output: %s",err)
 			success = false
 		} else {
 			success = true

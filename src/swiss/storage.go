@@ -98,12 +98,12 @@ func (s *Storage) ListJobs() []*Job {
 }
 
 func (s *Storage) Create(path string, data []byte) (string, error) {
-	log.Debug("Create key,value:", path, "data", data)
+	log.Debugf("Create key:%s,data:%s", path, data)
 	return s.conn.Create(path, data, 0, WorldACLPermAll)
 }
 
 func (s *Storage) Set(path string, data []byte) error {
-	log.Debug("Set key,value:", path, "data", data)
+	log.Debugf("Set key:%s,value:%s", path, "data", data)
 	_, err := s.conn.Set(path, []byte(data), -1)
 	return err
 }
