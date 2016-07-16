@@ -88,9 +88,9 @@ func (s *Storage) ListJobs() []*Job {
 	jobs[0] = &Job{
 		Id:1,
 		Name:"test",
-		ScheduleType: 0,
+		ScheduleType: Cron,
 		Cron : "*/8 * * * * *",
-		ScriptType: shell,
+		ScriptType: Shell,
 		Server: s.server,
 		WorkerIp:[]string{"127.0.0.1"},
 	}

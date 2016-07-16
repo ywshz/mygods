@@ -29,7 +29,7 @@ func (p *Processor) Run() {
 	//write to file
 	fout, err := os.Create(fullFilePath)
 	if err != nil {
-		log.Errorf("Job script full path,%s,%s",fullFilePath,err)
+		log.Errorf("Job script full path,%s,%s", fullFilePath, err)
 		return
 	}
 	fout.Write(scriptBts)
@@ -48,14 +48,14 @@ func (p *Processor) Run() {
 	output, _ := circbuf.NewBuffer(256000)
 
 	//封装成cmd
-	if p.Job.ScriptType == shell {
+	if p.Job.ScriptType == Shell {
 
 	}
 
 	var shell, flag string
 
 	switch p.Job.ScriptType{
-	case shell :
+	case Shell :
 		if runtime.GOOS == "windows" {
 			shell = "cmd"
 			flag = ""
@@ -63,10 +63,10 @@ func (p *Processor) Run() {
 			shell = "/bin/sh"
 			flag = ""
 		}
-	case hive :
+	case Hive :
 		shell = "hive"
 		flag = "-f"
-	case python :
+	case Python :
 		shell = "python"
 		flag = "-f"
 	}
@@ -77,14 +77,14 @@ func (p *Processor) Run() {
 	//运行job
 	var success, done bool
 
-	log.Debugf("Start the cmd, Shell:%s, flag:%s", shell,flag)
+	log.Debugf("Start the cmd, Shell:%s, flag:%s", shell, flag)
 	cmd.Start()
 	go func() {
 		err = cmd.Wait()
 		slowTimer.Stop()
 
 		if err != nil {
-			log.Errorf("proc: command error output: %s",err)
+			log.Errorf("proc: command error output: %s", err)
 			success = false
 		} else {
 			success = true

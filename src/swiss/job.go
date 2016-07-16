@@ -10,40 +10,84 @@ import (
 	"strconv"
 )
 
+type ScheduleType int
+
 const (
-	hive = "hive"
-	python = "python"
-	shell = "shell"
+	Cron ScheduleType = iota
+	Dependency
 )
+
+type ScriptType int
+
+const (
+	Hive ScriptType = iota
+	Python
+	Shell
+)
+
+type JobScheduleStatus int
+
+const (
+	On JobScheduleStatus = iota
+	Off
+)
+
+type JobRunStatus int
+
+const (
+	Runnning JobRunStatus = iota
+	Success
+	Failed
+)
+
 type Job struct {
 	Id           int `json:"id"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
-	//Group        string `json:"group"`
-	ScheduleType int `json:"scheduleType"`
+	ScheduleType ScheduleType `json:"scheduleType"`
 	Cron         string `json:"cron"`
 	Dependency   []int `json:"dependency"`
-	ScriptType   string `json:"scriptType"`
+	ScriptType   ScriptType `json:"scriptType"`
 	WorkerTag    []string `json:"workerTag"`
 	WorkerIp     []string `json:"workerIp"`
 	CreateTime   time.Time `json:"createTime"`
 	ModifyTime   time.Time `json:"modifyTime"`
-	Status       int `json:"status"`
-	Retries      uint `json:"retries"`
-	SuccessCount int `json:"success_count"`
-	ErrorCount   int `json:"error_count"`
-	LastSuccess  time.Time `json:"last_success"`
-	LastError    time.Time `json:"last_error"`
+	Status       JobScheduleStatus `json:"status"`
 	Server       *Server `json:"-"`
 }
 
 type ReadyToRunJob struct {
-	JobId int `json:jobId`
-	ExeId int `json:ExeId`
-	ScriptType string `json:scriptType`
-	Tags  []string `json:tags`
-	Ip    []string `json:ip`
+	JobId      int `json:jobId`
+	ExeId      int `json:ExeId`
+	ScriptType ScriptType `json:scriptType`
+	Tags       []string `json:tags`
+	Ip         []string `json:ip`
 	CreateTime time.Time `json:createTime`
+}
+
+type RunningJob struct {
+	JobId     int
+	ExeId     int
+	Retries   uint
+	WorkerId  int
+	StartTime time.Time
+}
+
+type CompleteJob struct {
+	JobId    int
+	ExeId    int
+	WorkerId int
+	Retries  uint
+	Status   JobRunStatus
+	EndTime  time.Time
+}
+
+type JobStatistics struct {
+	JobId        int
+	SuccessCount int
+	ErrorCount   int
+	LastSuccess  time.Time
+	LastError    time.Time
 }
 
 func (job *Job) Run() {
