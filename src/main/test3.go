@@ -1,21 +1,34 @@
 package main
 
 import (
+	"log"
 	"net/http"
-	"net/url"
+
+	"github.com/googollee/go-socket.io"
 	"fmt"
-	"io/ioutil"
 )
 
 func main() {
-	resp, err := http.PostForm("http://localhost:8080/jobreceiver",
-		url.Values{"job": {"{123}"}})
-
+	server, err := socketio.NewServer(nil)
 	if err != nil {
-		fmt.Printf("error:", err)
-	}else {
-		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Printf("res:", string(body))
+		log.Fatal(err)
 	}
-	defer resp.Body.Close()
+	server.On("connection", func(so socketio.Socket) {
+		log.Println("on connection")
+		// Socket.io acknowledgement example
+		// The return type may vary depending on whether you will return
+		// For this example it is "string" type
+		so.On("chat message with ack", func(msg string) string {
+			fmt.Println(msg)
+			return msg
+		})
+		so.On("disconnection", func() {
+			log.Println("on disconnect")
+		})
+	})
+	server.On("error", func(so socketio.Socket, err error) {
+		log.Println("error:", err)
+	})
+	http.Handle("/socket.io/", server)
+	log.Fatal(http.ListenAndServe(":5000", nil))
 }
