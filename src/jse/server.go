@@ -45,7 +45,7 @@ func (j *Server) Start(port string) {
 		log.Println("error:", err)
 	})
 	http.Handle("/socket.io/", server)
-	log.Println("Serving at localhost:%s", port)
+	log.Printf("Serving at port:%s", port)
 	http.HandleFunc("/runjs", func(w http.ResponseWriter, req *http.Request) {
 		script := req.PostFormValue("script")
 		params := req.PostFormValue("params")

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"io/ioutil"
+	"github.com/bitly/go-simplejson"
 )
 
 type JsEngine struct {
@@ -35,8 +36,28 @@ func (j *JsEngine) Run(script string, params map[string]interface{}) (string, er
 	vm := otto.New()
 
 	//增加post方法
-	vm.Set("post", func(call otto.FunctionCall) otto.Value {
+	vm.Set("getString", func(call otto.FunctionCall) otto.Value {
 		result, _ := vm.ToValue(post(call.Argument(0).String(), call.Argument(1).String()))
+		return result
+	})
+
+	vm.Set("getForMap", func(call otto.FunctionCall) otto.Value {
+		result, _ := vm.ToValue(getForMap(call.Argument(0).String(), call.Argument(1).String()))
+		return result
+	})
+
+	vm.Set("getForArray", func(call otto.FunctionCall) otto.Value {
+		result, _ := vm.ToValue(getForArray(call.Argument(0).String(), call.Argument(1).String()))
+		return result
+	})
+
+	vm.Set("postForMap", func(call otto.FunctionCall) otto.Value {
+		result, _ := vm.ToValue(postForMap(call.Argument(0).String(), call.Argument(1).String()))
+		return result
+	})
+
+	vm.Set("postForArray", func(call otto.FunctionCall) otto.Value {
+		result, _ := vm.ToValue(postForArray(call.Argument(0).String(), call.Argument(1).String()))
 		return result
 	})
 
@@ -75,3 +96,50 @@ func post(postUrl, params string) string {
 }
 
 
+func getForArray(postUrl, params string) []interface{}  {
+	resp, err := http.Get(postUrl)
+
+	if err != nil {
+		fmt.Printf("error:%v", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	js,_ := simplejson.NewJson(body)
+	return js.MustArray()
+}
+
+func postForArray(postUrl, params string) []interface{}  {
+	resp, err := http.PostForm(postUrl, url.Values{"params": {params}})
+
+	if err != nil {
+		fmt.Printf("error:%v", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	js,_ := simplejson.NewJson(body)
+	return js.MustArray()
+}
+
+func getForMap(postUrl, params string) map[string]interface{} {
+	resp, err := http.Get(postUrl)
+
+	if err != nil {
+		fmt.Printf("error:%v", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	js,_ := simplejson.NewJson(body)
+	return js.MustMap()
+}
+
+func postForMap(postUrl, params string) map[string]interface{} {
+	resp, err := http.PostForm(postUrl, url.Values{"params": {params}})
+
+	if err != nil {
+		fmt.Printf("error:%v", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	js,_ := simplejson.NewJson(body)
+	return js.MustMap()
+}

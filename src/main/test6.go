@@ -18,8 +18,12 @@ func main() {
 	`))
 	//fmt.Println(s.Get("name").MustMap())
 	vm.Set("def", s.Get("name").MustString())
-	vm.Set("getData", func(call otto.FunctionCall) otto.Value {
-		result, _ := vm.ToValue(getData(call.Argument(0).String(), call.Argument(1).String()))
+	vm.Set("getArray", func(call otto.FunctionCall) otto.Value {
+		result, _ := vm.ToValue(getArray(call.Argument(0).String(), call.Argument(1).String()))
+		return result
+	})
+	vm.Set("getMap", func(call otto.FunctionCall) otto.Value {
+		result, _ := vm.ToValue(getMap(call.Argument(0).String(), call.Argument(1).String()))
 		return result
 	})
 	_, e := vm.Run(`
@@ -28,22 +32,36 @@ func main() {
 	//	console.log(x[0].name)
 		//console.log(x.push(1))
 		//var x = {category_level:1};
-    		var x = JSON.parse(getData('http://localhost:8080/ds/50',JSON.stringify({name:1,age:19})));
-    		console.log(x.data)
-    		console.log(x.code)
+    		//var x = JSON.parse(getData('http://localhost:8080/ds/50',JSON.stringify({name:1,age:19})));
+    		//console.log(x.data)
+    		//console.log(x.code)
+    		console.log(getArray('http://www.jeasyui.com/demo/main/treegrid_data1.json')[0].id)
 	`)
 	if e != nil {
 		fmt.Println(e)
 	}
 }
 
-func getData(postUrl, params string) string  {
+func getArray(postUrl, params string) []interface{}  {
 	resp, err := http.PostForm(postUrl, url.Values{"params": {params}})
 
 	if err != nil {
-		fmt.Printf("error:", err)
+		fmt.Printf("error:%v", err)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	return (string)(body)
+	js,_ := simplejson.NewJson(body)
+	return js.MustArray()
+}
+
+func getMap(postUrl, params string) map[string]interface{} {
+	resp, err := http.PostForm(postUrl, url.Values{"params": {params}})
+
+	if err != nil {
+		fmt.Printf("error:%v", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	js,_ := simplejson.NewJson(body)
+	return js.MustMap()
 }
