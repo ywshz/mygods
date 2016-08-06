@@ -2,9 +2,8 @@ package jse
 
 import (
 	"github.com/robertkrimen/otto"
-	"fmt"
 	"time"
-	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"io/ioutil"
@@ -22,14 +21,14 @@ func NewJsEngine() *JsEngine {
 	}
 }
 
-func (j *JsEngine) Run(script string, params map[string]interface{}) (string, error) {
+func (j *JsEngine) Run(script string, params map[string]interface{}) (interface{}, error) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println(err)
+			log.Fatal(err)
 		}
 	}()
 
-	fmt.Printf("Run script:\n %s \nwith:\n %v \n\n", script, params)
+	log.Infof("Run script:\n%s\n with params:\n%v", script, params)
 	start := time.Now()
 
 	vm := otto.New()
@@ -71,34 +70,37 @@ func (j *JsEngine) Run(script string, params map[string]interface{}) (string, er
 
 	for key, val := range params {
 		vm.Set(key, val)
-		fmt.Printf("\nSet key:%v value:%v, type:%T \n", key, val, val)
+		log.Infof("Set key:%v value:%v, type:%T", key, val, val)
 	}
 
 	v, err := vm.Run(script)
 
 	if err != nil {
 		errStr := fmt.Sprintf("Run JS Exception : %s", err)
-		fmt.Println("Run JS Exception : ", err)
+		log.Infof("Run JS Exception : ", err)
 		return errStr,err
 	}
 
-	fmt.Printf("\nCost %v seconds.\n", (time.Now().Sub(start)))
+	log.Infof("Cost %v seconds.", (time.Now().Sub(start)))
 
 	rs, err := v.Export()
 	//rs, err := vm.Get("$result")
 	if err != nil {
-		return "", err
+		errStr := fmt.Sprintf("Run JS Exception : %s", err)
+		log.Infof("Export JS Exception : ", err)
+		return errStr, err
 	}
-	jsonString, _ := json.Marshal(rs)
-	fmt.Println(string(jsonString))
-	return string(jsonString), nil
+	//jsonString, _ := json.Marshal(rs)
+	//log.Infof("Run result : %s", string(jsonString))
+	//return string(jsonString), nil
+	return rs,nil
 }
 
 func post(postUrl, params string) string {
 	resp, err := http.PostForm(postUrl, url.Values{"params": {params}})
 
 	if err != nil {
-		fmt.Printf("error:", err)
+		log.Errorf("error:", err)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)

@@ -2,13 +2,24 @@ package jse
 
 import (
 	"net/http"
-	//"encoding/json"
 	"github.com/googollee/go-socket.io"
 	"github.com/bitly/go-simplejson"
-	"log"
 	"fmt"
 	"encoding/json"
+	"github.com/op/go-logging"
 )
+
+var log = logging.MustGetLogger("swiss")
+
+func init() {
+	var format = logging.MustStringFormatter(
+		`%{level:.4s} ▶ %{shortpkg}.%{shortfile}.%{longfunc} %{color:reset} %{message}`,
+	)
+	logging.SetFormatter(format)
+	logging.SetLevel(logging.DEBUG, "jse")
+}
+
+
 
 type Server struct {
 	jsEngine *JsEngine
@@ -26,8 +37,8 @@ func (j *Server) Start(port string) {
 	}
 
 	server.On("connection", func(so socketio.Socket) {
-		log.Println("on connection")
-		so.On("runjs", func(msg string) string {
+		log.Info("on connection")
+		so.On("runjs", func(msg string) interface{} {
 			fmt.Println(msg)
 			js, _ := simplejson.NewJson([]byte(msg))
 			value, err := j.jsEngine.Run(js.Get("script").MustString(), js.Get("params").MustMap())
@@ -38,14 +49,14 @@ func (j *Server) Start(port string) {
 			return value
 		})
 		so.On("disconnection", func() {
-			log.Println("on disconnect")
+			log.Info("on disconnect")
 		})
 	})
 	server.On("error", func(so socketio.Socket, err error) {
-		log.Println("error:", err)
+		log.Errorf("error:", err)
 	})
 	http.Handle("/socket.io/", server)
-	log.Printf("Serving at port:%s", port)
+	log.Infof("Serving at port:%s", port)
 	http.HandleFunc("/runjs", func(w http.ResponseWriter, req *http.Request) {
 		script := req.PostFormValue("script")
 		params := req.PostFormValue("params")
@@ -56,10 +67,12 @@ func (j *Server) Start(port string) {
 
 		value, err := j.jsEngine.Run(script, paramsMap)
 
-		w.Write([]byte(value))
+		res, _ := json.Marshal(value)
+
+		w.Write((res))
 
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 		}
 	})
 
