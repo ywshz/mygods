@@ -56,11 +56,11 @@ func (j *Server) Start(port string) {
 
 		value, err := j.jsEngine.Run(script, paramsMap)
 
-		if err != nil {
-			panic(err)
-		}
-
 		w.Write([]byte(value))
+
+		if err != nil {
+			log.Println(err)
+		}
 	})
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))

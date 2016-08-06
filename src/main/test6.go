@@ -42,7 +42,7 @@ func main() {
 	}
 }
 
-func getArray(postUrl, params string) []interface{}  {
+func getArray(postUrl, params string) interface{}  {
 	resp, err := http.PostForm(postUrl, url.Values{"params": {params}})
 
 	if err != nil {
