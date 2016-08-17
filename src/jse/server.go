@@ -7,19 +7,33 @@ import (
 	"fmt"
 	"encoding/json"
 	"github.com/op/go-logging"
+	"os"
 )
 
 var log = logging.MustGetLogger("swiss")
 
 func init() {
 	var format = logging.MustStringFormatter(
-		`%{level:.4s} ▶ %{shortpkg}.%{shortfile}.%{longfunc} %{color:reset} %{message}`,
+		`%{color}%{level:.4s} ▶ %{shortpkg}.%{shortfile}.%{longfunc} %{color:reset} %{message}`,
 	)
 	logging.SetFormatter(format)
 	logging.SetLevel(logging.DEBUG, "jse")
+
+	logFile, err := os.Create("jse.log")
+	if err != nil {
+		fmt.Println(err)
+	}
+	backend1 := logging.NewLogBackend(logFile, "", 0)
+	backend2 := logging.NewLogBackend(os.Stderr, "", 0)
+	backend1.Color = true
+	backend2.Color = true
+
+	backend2Formatter := logging.NewBackendFormatter(backend2, format)
+	backend1Leveled := logging.AddModuleLevel(backend1)
+	backend1Leveled.SetLevel(logging.INFO, "")
+
+	logging.SetBackend(backend1Leveled, backend2Formatter)
 }
-
-
 
 type Server struct {
 	jsEngine *JsEngine
@@ -45,7 +59,7 @@ func (j *Server) Start(port string) {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("-->",value)
+			fmt.Println("-->", value)
 			return value
 		})
 		so.On("disconnection", func() {
@@ -61,7 +75,7 @@ func (j *Server) Start(port string) {
 		script := req.PostFormValue("script")
 		params := req.PostFormValue("params")
 
-		log.Infof("get params:%s",params)
+		log.Infof("得到脚本:\n%s\n参数:\n%s\n", script, params)
 
 		var paramsMap map[string]interface{}
 		json.Unmarshal([]byte(params), &paramsMap)
@@ -78,7 +92,7 @@ func (j *Server) Start(port string) {
 		}
 	})
 
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":" + port, nil))
 }
 
 
