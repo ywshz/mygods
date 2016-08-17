@@ -24,11 +24,11 @@ func NewJsEngine() *JsEngine {
 func (j *JsEngine) Run(script string, params map[string]interface{}) (interface{}, error) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Error(err)
+			log.Error("Error:", err)
 		}
 	}()
 
-	log.Infof("Run script:\n%s\n with params:\n%v", script, params)
+	log.Info("Run script:\n%s\n with params:\n%v", script, params)
 	start := time.Now()
 
 	vm := otto.New()
@@ -70,24 +70,24 @@ func (j *JsEngine) Run(script string, params map[string]interface{}) (interface{
 
 	for key, val := range params {
 		vm.Set(key, val)
-		log.Infof("Set key:%v value:%v, type:%T", key, val, val)
+		log.Info("Set key:%v value:%v, type:%T", key, val, val)
 	}
 
 	v, err := vm.Run(script)
 
 	if err != nil {
 		errStr := fmt.Sprintf("Run JS Exception : %s", err)
-		log.Infof("Run JS Exception : ", err)
+		log.Info("Run JS Exception : ", err)
 		return errStr,err
 	}
 
-	log.Infof("Cost %v seconds.", (time.Now().Sub(start)))
+	log.Info("Cost %v seconds.", (time.Now().Sub(start)))
 
 	rs, err := v.Export()
 	//rs, err := vm.Get("$result")
 	if err != nil {
 		errStr := fmt.Sprintf("Run JS Exception : %s", err)
-		log.Infof("Export JS Exception : ", err)
+		log.Info("Export JS Exception : ", err)
 		return errStr, err
 	}
 	//jsonString, _ := json.Marshal(rs)
@@ -100,7 +100,7 @@ func post(postUrl, params string) string {
 	resp, err := http.PostForm(postUrl, url.Values{"params": {params}})
 
 	if err != nil {
-		log.Errorf("error:", err)
+		log.Error("error:", err)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)

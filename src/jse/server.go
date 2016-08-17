@@ -6,33 +6,37 @@ import (
 	"github.com/bitly/go-simplejson"
 	"fmt"
 	"encoding/json"
-	"github.com/op/go-logging"
-	"os"
+	"github.com/astaxie/beego/logs"
 )
 
-var log = logging.MustGetLogger("swiss")
+//var log = logging.MustGetLogger("swiss")
+var log = logs.NewLogger(10000)
 
 func init() {
-	var format = logging.MustStringFormatter(
-		`%{color}%{level:.4s} ▶ %{shortpkg}.%{shortfile}.%{longfunc} %{color:reset} %{message}`,
-	)
-	logging.SetFormatter(format)
-	logging.SetLevel(logging.DEBUG, "jse")
-
-	logFile, err := os.Create("jse.log")
-	if err != nil {
-		fmt.Println(err)
-	}
-	backend1 := logging.NewLogBackend(logFile, "", 0)
-	backend2 := logging.NewLogBackend(os.Stderr, "", 0)
-	backend1.Color = true
-	backend2.Color = true
-
-	backend2Formatter := logging.NewBackendFormatter(backend2, format)
-	backend1Leveled := logging.AddModuleLevel(backend1)
-	backend1Leveled.SetLevel(logging.INFO, "")
-
-	logging.SetBackend(backend1Leveled, backend2Formatter)
+	log.EnableFuncCallDepth(true)
+	//log.SetLogger("file", `{"filename":"jse.log"}`)
+	log.SetLogger("console", "")
+	log.SetLevel(logs.LevelDebug)
+	//var format = logging.MustStringFormatter(
+	//	`%{color}%{level:.4s} ▶ %{shortpkg}.%{shortfile}.%{longfunc} %{color:reset} %{message}`,
+	//)
+	//logging.SetFormatter(format)
+	//logging.SetLevel(logging.DEBUG, "jse")
+	//
+	//logFile, err := os.Create("jse.log")
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
+	//backend1 := logging.NewLogBackend(logFile, "", 0)
+	//backend2 := logging.NewLogBackend(os.Stderr, "", 0)
+	//backend1.Color = true
+	//backend2.Color = true
+	//
+	//backend2Formatter := logging.NewBackendFormatter(backend2, format)
+	//backend1Leveled := logging.AddModuleLevel(backend1)
+	//backend1Leveled.SetLevel(logging.INFO, "")
+	//
+	//logging.SetBackend(backend1Leveled, backend2Formatter)
 }
 
 type Server struct {
@@ -47,7 +51,7 @@ func NewServer() *Server {
 func (j *Server) Start(port string) {
 	server, err := socketio.NewServer(nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Critical("Big error: %s",err)
 	}
 
 	server.On("connection", func(so socketio.Socket) {
@@ -67,15 +71,15 @@ func (j *Server) Start(port string) {
 		})
 	})
 	server.On("error", func(so socketio.Socket, err error) {
-		log.Errorf("error:", err)
+		log.Error("error:%s", err)
 	})
 	http.Handle("/socket.io/", server)
-	log.Infof("Serving at port:%s", port)
+	log.Info("Serving at port:%s", port)
 	http.HandleFunc("/runjs", func(w http.ResponseWriter, req *http.Request) {
 		script := req.PostFormValue("script")
 		params := req.PostFormValue("params")
 
-		log.Infof("得到脚本:\n%s\n参数:\n%s\n", script, params)
+		log.Info("得到脚本:\n%s\n参数:\n%s\n", script, params)
 
 		var paramsMap map[string]interface{}
 		json.Unmarshal([]byte(params), &paramsMap)
@@ -88,11 +92,11 @@ func (j *Server) Start(port string) {
 		w.Write((res))
 
 		if err != nil {
-			log.Error(err)
+			log.Error("Error : ", err)
 		}
 	})
 
-	log.Fatal(http.ListenAndServe(":" + port, nil))
+	log.Critical("Failed: ",http.ListenAndServe(":" + port, nil))
 }
 
 
