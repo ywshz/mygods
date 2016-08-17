@@ -24,7 +24,7 @@ func NewJsEngine() *JsEngine {
 func (j *JsEngine) Run(script string, params map[string]interface{}) (interface{}, error) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Fatal(err)
+			log.Error(err)
 		}
 	}()
 

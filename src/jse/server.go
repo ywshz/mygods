@@ -61,7 +61,8 @@ func (j *Server) Start(port string) {
 		script := req.PostFormValue("script")
 		params := req.PostFormValue("params")
 
-		fmt.Println(params)
+		log.Infof("get params:%s",params)
+
 		var paramsMap map[string]interface{}
 		json.Unmarshal([]byte(params), &paramsMap)
 
@@ -69,6 +70,7 @@ func (j *Server) Start(port string) {
 
 		res, _ := json.Marshal(value)
 
+		w.Header().Set("Content-Type", "application/json")
 		w.Write((res))
 
 		if err != nil {
