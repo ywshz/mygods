@@ -35,7 +35,7 @@ func failOnError(err error, msg string) {
 }
 
 func main() {
-	conn, err := amqp.Dial("amqp://admin:d97aNp@10.120.152.242:5672")
+	conn, err := amqp.Dial(os.Args[0])
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -53,7 +53,7 @@ func main() {
 	)
 	failOnError(err, "Failed to declare a queue")
 
-	ReadLine("/Users/yws/Downloads/result.txt", func(line []byte) {
+	ReadLine(os.Args[1], func(line []byte) {
 		err = ch.Publish(
 			"", // exchange
 			q.Name, // routing key
